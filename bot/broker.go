@@ -80,6 +80,11 @@ func (b *Broker) StartBroker() {
 			break
 		}
 
+		//No work for now
+		if len(workQueue) == 0 {
+			continue
+		}
+
 		//distribute workload to waiting bots
 		b.DistributeWork(waitingCrawlerBots, workQueue)
 

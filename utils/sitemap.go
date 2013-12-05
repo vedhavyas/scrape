@@ -21,6 +21,8 @@ func GenerateSiteMap(fileName string, urls []string) error {
 	for _, loc := range urls {
 		fh.WriteString("    " + "<url>\n")
 		fh.WriteString("      " + "<loc>" + loc + "</loc>\n")
+		fh.WriteString("      " + "<changefreq>weekly</changefreq>\n")
+		fh.WriteString("      " + "<priority>0.5</priority>\n")
 		fh.WriteString("    " + "</url>\n")
 	}
 	fh.WriteString("</urlset> ")
