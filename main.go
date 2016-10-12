@@ -4,29 +4,24 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
 	"net/url"
 	"runtime"
 	"sync"
 
-	"github.com/vedhavyas/webcrawler/parsers"
-	"github.com/vedhavyas/webcrawler/utils"
+	"github.com/vedhavyas/webcrawler/bot"
 )
 
-type config struct {
+//Configuration holds the configuration passed during startup
+type Configuration struct {
 	StartURL            *url.URL
 	FollowExternalLinks bool
 	MaxProcs            int
 }
 
-var configuration config
-var crawledURLS map[string]bool
-var assetsSlice []string
-
 func main() {
 	log.SetFlags(log.Ldate | log.Lshortfile)
-	urlPTR := flag.String("url", "", "starting url")
-	externalLinksPTR := flag.Bool("follow-external-links", false, "Follows links outside the domain")
+
+	urlPTR := flag.String("url", "", "Starting URL")
 	maxProcsPTR := flag.Int("max-procs", runtime.NumCPU(), "Number of CPU to use")
 	flag.Parse()
 
@@ -39,103 +34,56 @@ func main() {
 		log.Fatal(err)
 	}
 
-	configuration = config{
+	configuration := Configuration{
 		StartURL:            startURL,
-		FollowExternalLinks: *externalLinksPTR,
+		FollowExternalLinks: false,
 		MaxProcs:            *maxProcsPTR,
 	}
 
-	urlQueue := make(chan string)
-	filteringQueue := make(chan string)
-	assetsQueue := make(chan string)
-	done := make(chan bool)
+	runtime.GOMAXPROCS(configuration.MaxProcs)
 
-	go func() {
-		urlQueue <- configuration.StartURL.String()
-	}()
-
-	go urlFilter(urlQueue, filteringQueue)
-	go collectAssets(assetsQueue, done)
-
+	submitWorkCh := make(chan bot.WorkDone)
 	wg := sync.WaitGroup{}
-	wg.Add(configuration.MaxProcs - 1)
+	wg.Add(configuration.MaxProcs)
+	bots := []*bot.Crawler{}
+
 	for i := 0; i < configuration.MaxProcs-1; i++ {
-		go crawl(urlQueue, filteringQueue, &wg)
+		crawlerBot := bot.Crawler{
+			Id:          i,
+			SubmitWork:  submitWorkCh,
+			Done:        make(chan bool),
+			Wg:          &wg,
+			ReceiveWork: make(chan []string),
+		}
+		go func(bot *bot.Crawler) {
+			bot.Crawl()
+		}(&crawlerBot)
+		bots = append(bots, &crawlerBot)
+	}
+
+	broker := &bot.Broker{
+		SubmitWorkCh: submitWorkCh,
+		CrawlerBots:  bots,
+		Wg:           &wg,
+	}
+
+	go func(broker *bot.Broker) {
+		broker.StartBroker()
+	}(broker)
+
+	submitWorkCh <- bot.WorkDone{
+		Hrefs:  []string{configuration.StartURL.String()},
+		Assets: []string{},
 	}
 
 	wg.Wait()
-}
 
-func crawl(queue chan string, filteringQueue chan<- string, wg *sync.WaitGroup) {
-
-	client := http.Client{}
-	for link := range queue {
-		resp, err := client.Get(link)
-
-		if err != nil {
-			if resp != nil {
-				resp.Body.Close()
-			}
-			log.Println(err)
-			continue
-		}
-
-		hrefs := parsers.ExtractLinksFromHTML(resp.Body)
-		resp.Body.Close()
-
-		for _, link := range hrefs {
-			absolute := utils.MakeAbsolute(configuration.StartURL.String(), link)
-			if absolute == nil {
-				continue
-			}
-
-			if absolute.Host != configuration.StartURL.Host {
-				continue
-			}
-
-			go func() { filteringQueue <- absolute.String() }()
-		}
+	fmt.Println("----------------------")
+	for _, link := range broker.CrawledLinks {
+		fmt.Println(link)
 	}
-}
-
-func urlFilter(urlQueue chan<- string, filteringQueue <-chan string) {
-	crawledURLS = make(map[string]bool)
-
-	for href := range filteringQueue {
-		_, exists := crawledURLS[href]
-		if exists {
-			continue
-		}
-
-		crawledURLS[href] = true
-		go func() { urlQueue <- href }()
-		fmt.Println(href)
-	}
-
-}
-
-func collectAssets(assetsQueue <-chan string, stopQueue <-chan bool) {
-	var asset string
-OuterLoop:
-	for {
-		select {
-		case asset <- assetsQueue:
-			exists := false
-		InnerLoop:
-			for _, presentAsset := range assetsSlice {
-				if presentAsset == asset {
-					exists = true
-					break InnerLoop
-				}
-
-			}
-
-			if !exists {
-				assetsSlice = append(assetsSlice, asset)
-			}
-
-		case <-stopQueue:
-			break OuterLoop
-		}
+	fmt.Println("----------------------")
+	for _, asset := range broker.CrawledAssets {
+		fmt.Println(asset)
 	}
 }
