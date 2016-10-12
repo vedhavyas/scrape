@@ -3,6 +3,7 @@ package bot
 import (
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/vedhavyas/webcrawler/utils/parsers"
@@ -45,9 +46,9 @@ func (c *Crawler) Crawl() {
 		case <-c.Done:
 			c.Wg.Done()
 			break
-		case urls := <-c.ReceiveWork:
+		case payload := <-c.ReceiveWork:
 			c.SetWorking(true)
-			for _, crawlURL := range urls {
+			for _, crawlURL := range payload {
 				resp, err := client.Get(crawlURL)
 
 				if err != nil {
@@ -58,7 +59,12 @@ func (c *Crawler) Crawl() {
 					continue
 				}
 
-				hrefs, assets := parsers.ExtractLinksFromHTML(resp.Body)
+				var hrefs, assets []string
+				if strings.Contains(resp.Header.Get("Content-type"), "text/html") {
+					hrefs, assets = parsers.ExtractLinksFromHTML(resp.Body)
+				} else {
+					assets = append(assets, crawlURL)
+				}
 				resp.Body.Close()
 
 				resolvedHrefs, err := resolvers.ResolveURLS(crawlURL, hrefs, true)
