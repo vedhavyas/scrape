@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/vedhavyas/webcrawler/bot"
+	"github.com/vedhavyas/sitemap-generator/bot"
 )
 
 //Configuration holds the configuration passed during startup

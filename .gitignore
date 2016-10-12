@@ -63,6 +63,6 @@ crashlytics-build.properties
 fabric.properties
 
 .idea
-webcrawler.iml
-webcrawler
+*.iml
+sitemap-generator
 

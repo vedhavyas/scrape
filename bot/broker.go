@@ -3,7 +3,7 @@ package bot
 import (
 	"sync"
 
-	"github.com/vedhavyas/webcrawler/utils/filters"
+	"github.com/vedhavyas/sitemap-generator/utils/filters"
 )
 
 type Broker struct {

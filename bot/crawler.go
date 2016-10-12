@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/vedhavyas/webcrawler/utils/parsers"
-	"github.com/vedhavyas/webcrawler/utils/resolvers"
+	"github.com/vedhavyas/sitemap-generator/utils/parsers"
+	"github.com/vedhavyas/sitemap-generator/utils/resolvers"
 )
 
 type WorkDone struct {
