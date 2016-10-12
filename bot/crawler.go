@@ -71,7 +71,9 @@ func (c *Crawler) Crawl() {
 					log.Println(err)
 				}
 
-				c.SubmitWork <- WorkDone{Hrefs: resolvedHrefs, Assets: resolvedAssets}
+				go func(c *Crawler, hrefs, assets []string) {
+					c.SubmitWork <- WorkDone{Hrefs: resolvedHrefs, Assets: resolvedAssets}
+				}(c, resolvedHrefs, resolvedAssets)
 			}
 			c.SetWorking(false)
 		}

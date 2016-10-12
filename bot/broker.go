@@ -53,23 +53,30 @@ func (b *Broker) StartBroker() {
 
 		//distribute workload to waiting bots
 		if len(workQueue) < len(waitingCrawlerBots) {
-			for index, letter := range workQueue {
-				b.CrawlerBots[index].ReceiveWork <- []string{letter}
+			for index, link := range workQueue {
+				go deliverPayload(b.CrawlerBots[index], []string{link})
 			}
 		} else {
 			workDistribution := len(workQueue) / len(waitingCrawlerBots)
 			startIndex := 0
 			for index, crawlerBot := range waitingCrawlerBots {
+				var payload []string
 				if index+1 == len(waitingCrawlerBots) {
-					crawlerBot.ReceiveWork <- workQueue[startIndex:]
-					continue
+					payload = workQueue[startIndex:]
+				} else {
+					payload = workQueue[startIndex : startIndex+workDistribution]
+					startIndex += workDistribution
 				}
 
-				crawlerBot.ReceiveWork <- workQueue[startIndex : startIndex+workDistribution]
-				startIndex += workDistribution
+				go deliverPayload(crawlerBot, payload)
+
 			}
 		}
 
 		workQueue = workQueue[:0]
 	}
+}
+
+func deliverPayload(crawlerBot *Crawler, payload []string) {
+	crawlerBot.ReceiveWork <- payload
 }
