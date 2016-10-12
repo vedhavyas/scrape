@@ -19,9 +19,10 @@ func ExtractLinksFromHTML(httpBody io.Reader) []string {
 			return links
 		}
 		token := page.Token()
-		if tokenType == html.StartTagToken && token.DataAtom.String() == "a" {
+		if tokenType == html.StartTagToken &&
+			(token.DataAtom.String() == "a" || token.DataAtom.String() == "img") {
 			for _, attr := range token.Attr {
-				if attr.Key == "href" {
+				if attr.Key == "href" || attr.Key == "src" {
 					links = addToSlice(links, attr.Val)
 				}
 			}
