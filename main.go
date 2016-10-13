@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"net/url"
 	"runtime"
@@ -77,13 +76,4 @@ func main() {
 	}
 
 	wg.Wait()
-
-	fmt.Println("----------------------")
-	for _, link := range broker.CrawledLinks {
-		fmt.Println(link)
-	}
-	fmt.Println("----------------------")
-	for _, asset := range broker.CrawledAssets {
-		fmt.Println(asset)
-	}
 }

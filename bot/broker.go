@@ -3,6 +3,9 @@ package bot
 import (
 	"sync"
 
+	"fmt"
+
+	"github.com/vedhavyas/sitemap-generator/utils"
 	"github.com/vedhavyas/sitemap-generator/utils/filters"
 )
 
@@ -37,6 +40,12 @@ func (b *Broker) StartBroker() {
 			return waitingCrawlerBots
 		}()
 
+		utils.WriteInline(fmt.Sprintf("Unique links crawled - %v"+
+			" Unique Assets found - %v  Remaining - %v"+
+			" Working bots - %v/%v      ",
+			len(b.CrawledLinks), len(b.CrawledAssets), len(workQueue),
+			len(b.CrawlerBots)-len(waitingCrawlerBots), len(waitingCrawlerBots)))
+
 		//All bots are busy crawling
 		if len(waitingCrawlerBots) == 0 {
 			continue
@@ -48,6 +57,7 @@ func (b *Broker) StartBroker() {
 				crawlerBot.Done <- true
 			}
 			b.Wg.Done()
+			utils.WriteInline("\n")
 			break
 		}
 
