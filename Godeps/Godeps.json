@@ -7,6 +7,19 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "github.com/davecgh/go-spew/spew",
+			"Rev": "5215b55f46b2b919f50a1df0eaa5886afe4e3b3d"
+		},
+		{
+			"ImportPath": "github.com/pmezard/go-difflib/difflib",
+			"Rev": "792786c7400a136282c1664665ae0a8db921c6c2"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Comment": "v1.1.3-18-g8d64eb7",
+			"Rev": "8d64eb7173c7753d6419fd4a9caf057398611364"
+		},
+		{
 			"ImportPath": "golang.org/x/net/html",
 			"Rev": "ac47690cb8dd9b1093dbc083efb98cd41f05d9bd"
 		},

@@ -1,4 +1,4 @@
-package resolvers
+package utils
 
 import "net/url"
 

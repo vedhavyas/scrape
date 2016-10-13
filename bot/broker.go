@@ -1,33 +1,45 @@
 package bot
 
 import (
+	"fmt"
 	"sync"
 
-	"fmt"
-
 	"github.com/vedhavyas/sitemap-generator/utils"
-	"github.com/vedhavyas/sitemap-generator/utils/filters"
 )
 
+type Page struct {
+	PageURL string
+	Links   []string
+	Assets  []string
+	IsAsset bool
+}
+
 type Broker struct {
-	SubmitWorkCh  chan WorkDone
-	CrawlerBots   []*Crawler
-	Wg            *sync.WaitGroup
-	CrawledLinks  []string
-	CrawledAssets []string
+	StartingURL  string
+	SubmitWorkCh chan *Page
+	CrawlerBots  []*Crawler
+	Wg           *sync.WaitGroup
+	CrawledPages []string
+	UniqueAssets []string
+	AssetsInPage map[string][]string
 }
 
 func (b *Broker) StartBroker() {
 	var workQueue []string
-	for workDone := range b.SubmitWorkCh {
-		filteredHrefs := filters.FilterSlice(b.CrawledLinks, workDone.Hrefs)
-		b.CrawledLinks = append(b.CrawledLinks, filteredHrefs...)
 
-		filteredAssets := filters.FilterSlice(b.CrawledAssets, workDone.Assets)
-		b.CrawledAssets = append(b.CrawledAssets, filteredAssets...)
+	//distribute initial load
+	b.DistributeWork(b.CrawlerBots, []string{b.StartingURL})
 
-		filteredWorkQueue := filters.FilterSlice(workQueue, filteredHrefs)
-		workQueue = append(workQueue, filteredWorkQueue...)
+	for page := range b.SubmitWorkCh {
+
+		if page.IsAsset {
+			b.AssetsInPage[page.PageURL] = []string{page.PageURL}
+			b.UniqueAssets = utils.RemoveDuplicates(append(b.UniqueAssets, page.PageURL))
+		} else {
+			b.CrawledPages = utils.RemoveDuplicates(append(b.CrawledPages, page.PageURL))
+			b.AssetsInPage[page.PageURL] = page.Assets
+			b.UniqueAssets = utils.RemoveDuplicates(append(b.UniqueAssets, page.Assets...))
+		}
 
 		waitingCrawlerBots := func() []*Crawler {
 			var waitingCrawlerBots []*Crawler
@@ -40,11 +52,14 @@ func (b *Broker) StartBroker() {
 			return waitingCrawlerBots
 		}()
 
-		utils.WriteInline(fmt.Sprintf("Unique links crawled - %v "+
-			" Unique Assets found - %v  Remaining - %v "+
-			" Working bots - %v/%v                     ",
-			len(b.CrawledLinks), len(b.CrawledAssets), len(workQueue),
-			len(b.CrawlerBots)-len(waitingCrawlerBots), len(waitingCrawlerBots)))
+		utils.WriteInline(fmt.Sprintf(
+			"Bots waiting  %v  Bots crawling  %v   ",
+			len(waitingCrawlerBots), len(b.CrawlerBots)-len(waitingCrawlerBots)))
+
+		workQueue = append(workQueue, page.Links...)
+		workQueue = utils.FilterSlice(b.CrawledPages, workQueue)
+		workQueue = utils.FilterSlice(b.UniqueAssets, workQueue)
+		workQueue = utils.RemoveDuplicates(workQueue)
 
 		//All bots are busy crawling
 		if len(waitingCrawlerBots) == 0 {
@@ -62,28 +77,34 @@ func (b *Broker) StartBroker() {
 		}
 
 		//distribute workload to waiting bots
-		if len(workQueue) < len(waitingCrawlerBots) {
-			for index, link := range workQueue {
-				go deliverPayload(b.CrawlerBots[index], []string{link})
-			}
-		} else {
-			workDistribution := len(workQueue) / len(waitingCrawlerBots)
-			startIndex := 0
-			for index, crawlerBot := range waitingCrawlerBots {
-				var payload []string
-				if index+1 == len(waitingCrawlerBots) {
-					payload = workQueue[startIndex:]
-				} else {
-					payload = workQueue[startIndex : startIndex+workDistribution]
-					startIndex += workDistribution
-				}
+		b.DistributeWork(waitingCrawlerBots, workQueue)
 
-				go deliverPayload(crawlerBot, payload)
-
-			}
-		}
-
+		//clear current queue
 		workQueue = workQueue[:0]
+	}
+}
+
+func (b *Broker) DistributeWork(waitingCrawlerBots []*Crawler, workQueue []string) {
+	switch len(workQueue) < len(waitingCrawlerBots) {
+	case true:
+		for index, link := range workQueue {
+			go deliverPayload(b.CrawlerBots[index], []string{link})
+		}
+	case false:
+		workDistribution := len(workQueue) / len(waitingCrawlerBots)
+		startIndex := 0
+		for index, crawlerBot := range waitingCrawlerBots {
+			var payload []string
+			if index+1 == len(waitingCrawlerBots) {
+				payload = workQueue[startIndex:]
+			} else {
+				payload = workQueue[startIndex : startIndex+workDistribution]
+				startIndex += workDistribution
+			}
+
+			go deliverPayload(crawlerBot, payload)
+
+		}
 	}
 }
 

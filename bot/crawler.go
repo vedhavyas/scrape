@@ -6,20 +6,14 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/vedhavyas/sitemap-generator/utils/parsers"
-	"github.com/vedhavyas/sitemap-generator/utils/resolvers"
+	"github.com/vedhavyas/sitemap-generator/utils"
 )
-
-type WorkDone struct {
-	Hrefs  []string
-	Assets []string
-}
 
 //Crawler model to crawl pushed urls and submit urls back
 type Crawler struct {
 	Id          int
 	ReceiveWork chan []string
-	SubmitWork  chan<- WorkDone
+	SubmitWork  chan<- *Page
 	Done        chan bool
 	Wg          *sync.WaitGroup
 
@@ -59,27 +53,36 @@ func (c *Crawler) Crawl() {
 					continue
 				}
 
-				var hrefs, assets []string
-				if strings.Contains(resp.Header.Get("Content-type"), "text/html") {
-					hrefs, assets = parsers.ExtractLinksFromHTML(resp.Body)
-				} else {
-					assets = append(assets, crawlURL)
+				if resp.StatusCode != http.StatusOK {
+					continue
 				}
+
+				var hrefs, assets []string
+				isAsset := true
+				if strings.Contains(resp.Header.Get("Content-type"), "text/html") {
+					isAsset = false
+					hrefs, assets = utils.ExtractLinksFromHTML(resp.Body)
+					hrefs, err = utils.ResolveURLS(crawlURL, hrefs, true)
+					if err != nil {
+						log.Println(err)
+					}
+
+					assets, err = utils.ResolveURLS(crawlURL, assets, false)
+					if err != nil {
+						log.Println(err)
+					}
+				}
+
 				resp.Body.Close()
 
-				resolvedHrefs, err := resolvers.ResolveURLS(crawlURL, hrefs, true)
-				if err != nil {
-					log.Println(err)
-				}
-
-				resolvedAssets, err := resolvers.ResolveURLS(crawlURL, assets, false)
-				if err != nil {
-					log.Println(err)
-				}
-
 				go func(c *Crawler, hrefs, assets []string) {
-					c.SubmitWork <- WorkDone{Hrefs: resolvedHrefs, Assets: resolvedAssets}
-				}(c, resolvedHrefs, resolvedAssets)
+					c.SubmitWork <- &Page{
+						PageURL: crawlURL,
+						Links:   hrefs,
+						Assets:  assets,
+						IsAsset: isAsset,
+					}
+				}(c, hrefs, assets)
 			}
 			c.SetWorking(false)
 		}

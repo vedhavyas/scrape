@@ -1,8 +1,7 @@
-package parsers
+package utils
 
 import (
 	"io"
-	"strconv"
 	"strings"
 
 	"golang.org/x/net/html"
@@ -48,40 +47,20 @@ func findLinks(token html.Token, links []string, key string) []string {
 //addToSlice add an extracted href to slice after sanitizing it
 func addToSlice(links []string, href string) []string {
 	href = strings.TrimSpace(href)
-	href = removeHash(href)
+	href = normalizeHref(href, "#")
+	href = normalizeHref(href, "?")
 	if href == "" {
-		return links
-	}
-
-	if !isUnique(links, href) {
 		return links
 	}
 
 	return append(links, href)
 }
 
-//removeHash removes `#` from the href if present
-func removeHash(href string) string {
-	if !strings.Contains(href, "#") {
+func normalizeHref(href string, identifier string) string {
+	index := strings.Index(href, identifier)
+	if index == -1 {
 		return href
 	}
 
-	for index, char := range href {
-		if strconv.QuoteRune(char) == "'#'" {
-			return href[:index]
-		}
-	}
-
-	return href
-}
-
-//isUnique check if the url given is unique in this page
-func isUnique(links []string, href string) bool {
-	for _, link := range links {
-		if link == href {
-			return false
-		}
-	}
-
-	return true
+	return href[:index]
 }

@@ -21,11 +21,15 @@ func main() {
 	log.SetFlags(log.Ldate | log.Lshortfile)
 
 	urlPTR := flag.String("url", "", "Starting URL")
-	maxProcsPTR := flag.Int("max-procs", runtime.NumCPU(), "Number of CPU to use")
+	maxProcsPTR := flag.Int("max-procs", runtime.NumCPU()*2, "Number of CPU to use")
 	flag.Parse()
 
 	if *urlPTR == "" {
 		log.Fatal("Start URL is empty")
+	}
+
+	if *maxProcsPTR < 2 {
+		log.Fatal("Need atleast 2 procs to crawl")
 	}
 
 	startURL, err := url.Parse(*urlPTR)
@@ -41,7 +45,7 @@ func main() {
 
 	runtime.GOMAXPROCS(configuration.MaxProcs)
 
-	submitWorkCh := make(chan bot.WorkDone)
+	submitWorkCh := make(chan *bot.Page)
 	wg := sync.WaitGroup{}
 	wg.Add(configuration.MaxProcs)
 	bots := []*bot.Crawler{}
@@ -61,19 +65,16 @@ func main() {
 	}
 
 	broker := &bot.Broker{
+		StartingURL:  configuration.StartURL.String(),
 		SubmitWorkCh: submitWorkCh,
 		CrawlerBots:  bots,
 		Wg:           &wg,
+		AssetsInPage: make(map[string][]string),
 	}
 
 	go func(broker *bot.Broker) {
 		broker.StartBroker()
 	}(broker)
-
-	submitWorkCh <- bot.WorkDone{
-		Hrefs:  []string{configuration.StartURL.String()},
-		Assets: []string{},
-	}
 
 	wg.Wait()
 }
