@@ -40,9 +40,9 @@ func (b *Broker) StartBroker() {
 			return waitingCrawlerBots
 		}()
 
-		utils.WriteInline(fmt.Sprintf("Unique links crawled - %v"+
-			" Unique Assets found - %v  Remaining - %v"+
-			" Working bots - %v/%v      ",
+		utils.WriteInline(fmt.Sprintf("Unique links crawled - %v "+
+			" Unique Assets found - %v  Remaining - %v "+
+			" Working bots - %v/%v                     ",
 			len(b.CrawledLinks), len(b.CrawledAssets), len(workQueue),
 			len(b.CrawlerBots)-len(waitingCrawlerBots), len(waitingCrawlerBots)))
 
