@@ -59,7 +59,7 @@ func main() {
 			ReceiveWork: make(chan []string),
 		}
 		go func(bot *bot.Crawler) {
-			bot.Crawl()
+			bot.StartCrawling()
 		}(&crawlerBot)
 		bots = append(bots, &crawlerBot)
 	}

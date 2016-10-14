@@ -16,6 +16,7 @@ type Crawler struct {
 	SubmitWork  chan<- *Page
 	Done        chan bool
 	Wg          *sync.WaitGroup
+	Client      http.Client
 
 	sync.RWMutex
 	working bool
@@ -33,8 +34,8 @@ func (c *Crawler) IsWorking() bool {
 	return c.working
 }
 
-func (c *Crawler) Crawl() {
-	client := http.Client{}
+func (c *Crawler) StartCrawling() {
+	c.Client = http.Client{}
 	for {
 		select {
 		case <-c.Done:
@@ -42,49 +43,53 @@ func (c *Crawler) Crawl() {
 			break
 		case payload := <-c.ReceiveWork:
 			c.SetWorking(true)
-			for _, crawlURL := range payload {
-				resp, err := client.Get(crawlURL)
-
-				if err != nil {
-					if resp != nil {
-						resp.Body.Close()
-					}
-					log.Println(err)
-					continue
-				}
-
-				if resp.StatusCode != http.StatusOK {
-					continue
-				}
-
-				var hrefs, assets []string
-				isAsset := true
-				if strings.Contains(resp.Header.Get("Content-type"), "text/html") {
-					isAsset = false
-					hrefs, assets = utils.ExtractLinksFromHTML(resp.Body)
-					hrefs, err = utils.ResolveURLS(crawlURL, hrefs, true)
-					if err != nil {
-						log.Println(err)
-					}
-
-					assets, err = utils.ResolveURLS(crawlURL, assets, false)
-					if err != nil {
-						log.Println(err)
-					}
-				}
-
-				resp.Body.Close()
-
-				go func(c *Crawler, hrefs, assets []string) {
-					c.SubmitWork <- &Page{
-						PageURL: crawlURL,
-						Links:   hrefs,
-						Assets:  assets,
-						IsAsset: isAsset,
-					}
-				}(c, hrefs, assets)
+			for _, pageURL := range payload {
+				c.CrawlPage(pageURL)
 			}
 			c.SetWorking(false)
 		}
 	}
+}
+
+func (c *Crawler) CrawlPage(pageURL string) {
+	resp, err := c.Client.Get(pageURL)
+
+	if err != nil {
+		if resp != nil {
+			resp.Body.Close()
+		}
+		log.Println(err)
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return
+	}
+
+	var hrefs, assets []string
+	isAsset := true
+	if strings.Contains(resp.Header.Get("Content-type"), "text/html") {
+		isAsset = false
+		hrefs, assets = utils.ExtractLinksFromHTML(resp.Body)
+		hrefs, err = utils.ResolveURLS(pageURL, hrefs, true)
+		if err != nil {
+			log.Println(err)
+		}
+
+		assets, err = utils.ResolveURLS(pageURL, assets, false)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+
+	resp.Body.Close()
+
+	go func(c *Crawler, hrefs, assets []string) {
+		c.SubmitWork <- &Page{
+			PageURL: pageURL,
+			Links:   hrefs,
+			Assets:  assets,
+			IsAsset: isAsset,
+		}
+	}(c, hrefs, assets)
 }
