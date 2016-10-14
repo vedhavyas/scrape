@@ -56,7 +56,7 @@ func (b *Broker) StartBroker() {
 			return waitingCrawlerBots
 		}()
 
-		utils.WriteInline(fmt.Sprintf(
+		utils.WriteInLine(fmt.Sprintf(
 			"Bots waiting  %v  Bots crawling  %v   ",
 			len(waitingCrawlerBots), len(b.CrawlerBots)-len(waitingCrawlerBots)))
 
@@ -76,7 +76,7 @@ func (b *Broker) StartBroker() {
 				crawlerBot.Done <- true
 			}
 			b.Wg.Done()
-			utils.WriteInline("\n")
+			utils.WriteInLine("\n")
 			break
 		}
 

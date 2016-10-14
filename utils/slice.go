@@ -1,6 +1,6 @@
 package utils
 
-//FilterSliceAndAdd filters newList from baseList and return the filteredSlice
+//FilterSlice filters newList from baseList and return the filteredSlice
 func FilterSlice(baseSlice []string, s []string) []string {
 	var filteredSlice []string
 	for _, data := range s {

@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-//MakeAbsolute returns an absolute url of the extracted href
+//ResolveURL returns an absolute url of the extracted href
 //returns default string value of failed to resolve to absolute
 func ResolveURL(baseURL, href string) (*url.URL, *url.URL, error) {
 	baseURI, err := url.Parse(baseURL)
