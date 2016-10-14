@@ -52,6 +52,7 @@ func main() {
 	wg.Add(configuration.MaxProcs)
 	bots := []*bot.Crawler{}
 
+	fmt.Printf("Starting %v Crawling bots...\n", configuration.MaxProcs-1)
 	for i := 0; i < configuration.MaxProcs-1; i++ {
 		crawlerBot := bot.Crawler{
 			Id:          i,
@@ -74,6 +75,7 @@ func main() {
 		AssetsInPage: make(map[string][]string),
 	}
 
+	fmt.Printf("Starting %v Broker bots...\n", 1)
 	go func(broker *bot.Broker) {
 		broker.StartBroker()
 	}(broker)

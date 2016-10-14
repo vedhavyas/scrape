@@ -57,7 +57,7 @@ func (b *Broker) StartBroker() {
 		}()
 
 		utils.WriteInLine(fmt.Sprintf(
-			"Bots waiting  %v  Bots crawling  %v   ",
+			"Bots waiting - %v  Bots crawling - %v   ",
 			len(waitingCrawlerBots), len(b.CrawlerBots)-len(waitingCrawlerBots)))
 
 		workQueue = append(workQueue, page.Links...)
