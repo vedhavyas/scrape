@@ -1,0 +1,64 @@
+package utils
+
+import "os"
+
+func GenerateSiteMap(fileName string, urls []string) error {
+
+	err := deleteFileIfExists(fileName)
+	if err != nil {
+		return err
+	}
+
+	fh, err := os.OpenFile(fileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+	if err != nil {
+		return err
+	}
+	defer fh.Close()
+
+	fh.WriteString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+	fh.WriteString("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n")
+	for _, loc := range urls {
+		fh.WriteString("    " + "<url>\n")
+		fh.WriteString("      " + "<loc>" + loc + "</loc>\n")
+		fh.WriteString("    " + "</url>\n")
+	}
+	fh.WriteString("</urlset> ")
+
+	return nil
+
+}
+
+func GenerateAssetFile(fileName string, assetInPages map[string][]string) error {
+	err := deleteFileIfExists(fileName)
+	if err != nil {
+		return err
+	}
+
+	fh, err := os.OpenFile(fileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+	if err != nil {
+		return err
+	}
+	defer fh.Close()
+
+	for pageURL, assets := range assetInPages {
+		fh.WriteString(pageURL + "\n")
+		for _, assetURL := range assets {
+			fh.WriteString("    " + " - " + assetURL + "\n")
+		}
+	}
+
+	return nil
+
+}
+
+func deleteFileIfExists(fileName string) error {
+	//delete old file first
+	if _, err := os.Stat(fileName); err == nil {
+		err := os.Remove(fileName)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return nil
+}

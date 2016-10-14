@@ -7,7 +7,10 @@ import (
 	"runtime"
 	"sync"
 
+	"fmt"
+
 	"github.com/vedhavyas/sitemap-generator/bot"
+	"github.com/vedhavyas/sitemap-generator/utils"
 )
 
 //Configuration holds the configuration passed during startup
@@ -77,4 +80,18 @@ func main() {
 	}(broker)
 
 	wg.Wait()
+
+	sitemapFileName := "sitemap.xml"
+	err = utils.GenerateSiteMap(sitemapFileName, broker.CrawledPages)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Sitemap generated with name \"%v\"\n", sitemapFileName)
+
+	assetsLinkFileName := "assets.txt"
+	err = utils.GenerateAssetFile(assetsLinkFileName, broker.AssetsInPage)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Asset Link file generated with name \"%v\"\n", assetsLinkFileName)
 }

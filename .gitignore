@@ -65,4 +65,5 @@ fabric.properties
 .idea
 *.iml
 sitemap-generator
-
+sitemap.xml
+assets.txt
