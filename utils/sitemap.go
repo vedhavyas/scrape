@@ -45,6 +45,9 @@ func GenerateAssetFile(fileName string, assetInPages map[string][]string) error 
 	defer fh.Close()
 
 	for pageURL, assets := range assetInPages {
+		if len(assets) == 0{
+			continue
+		}
 		fh.WriteString(pageURL + "\n")
 		for _, assetURL := range assets {
 			fh.WriteString("    " + " - " + assetURL + "\n")
