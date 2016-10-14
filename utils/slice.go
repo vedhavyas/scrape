@@ -12,6 +12,7 @@ func FilterSlice(baseSlice []string, s []string) []string {
 	return filteredSlice
 }
 
+//IsExists will check if the given string exist in given slice
 func IsExists(baseSlice []string, data string) bool {
 	for _, s := range baseSlice {
 		if s == data {
@@ -22,6 +23,7 @@ func IsExists(baseSlice []string, data string) bool {
 	return false
 }
 
+//RemoveDuplicates will remove duplicate entries from slice
 func RemoveDuplicates(s []string) []string {
 	m := make(map[string]bool)
 	for _, data := range s {

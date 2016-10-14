@@ -7,6 +7,8 @@ import (
 	"github.com/vedhavyas/sitemap-generator/utils"
 )
 
+//Page holds the crawled data of a given page
+//Can be further be expanded to hold optional sitemap fields like lastmod, changefreq, priority
 type Page struct {
 	PageURL string
 	Links   []string
@@ -14,6 +16,7 @@ type Page struct {
 	IsAsset bool
 }
 
+//Broker is the one which distrubutes submitted crawled data back to crawlers
 type Broker struct {
 	StartingURL  string
 	SubmitWorkCh chan *Page
@@ -24,6 +27,7 @@ type Broker struct {
 	AssetsInPage map[string][]string
 }
 
+//StartBroker starts to listen on SubmitCh channel for work submissions from crawlers
 func (b *Broker) StartBroker() {
 	var workQueue []string
 
@@ -84,6 +88,7 @@ func (b *Broker) StartBroker() {
 	}
 }
 
+//DistributeWork distributes the workqueue among the waiting crawlers
 func (b *Broker) DistributeWork(waitingCrawlerBots []*Crawler, workQueue []string) {
 	switch len(workQueue) < len(waitingCrawlerBots) {
 	case true:
@@ -108,6 +113,7 @@ func (b *Broker) DistributeWork(waitingCrawlerBots []*Crawler, workQueue []strin
 	}
 }
 
+//deliverPayload will push payload to a crawler
 func deliverPayload(crawlerBot *Crawler, payload []string) {
 	crawlerBot.ReceiveWork <- payload
 }

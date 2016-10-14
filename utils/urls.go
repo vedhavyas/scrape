@@ -22,10 +22,11 @@ func ResolveURL(baseURL, href string) (*url.URL, *url.URL, error) {
 	return baseURI, uri, nil
 }
 
-func ResolveURLS(baseurl string, hrefs []string, restrictToDomain bool) ([]string, error) {
+//ResolveURLS will resolve the href based on provided baseURL
+func ResolveURLS(baseURL string, hrefs []string, restrictToDomain bool) ([]string, error) {
 	var resolvedURLS []string
 	for _, href := range hrefs {
-		baseURI, uri, err := ResolveURL(baseurl, href)
+		baseURI, uri, err := ResolveURL(baseURL, href)
 		if err != nil {
 			return resolvedURLS, err
 		}

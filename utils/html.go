@@ -34,6 +34,7 @@ func ExtractLinksFromHTML(httpBody io.Reader) ([]string, []string) {
 	}
 }
 
+//findLinks will extarct links from anchor tags and img tags
 func findLinks(token html.Token, links []string, key string) []string {
 	for _, attr := range token.Attr {
 		if attr.Key == key {
@@ -56,6 +57,7 @@ func addToSlice(links []string, href string) []string {
 	return append(links, href)
 }
 
+//normalizeHref will remove # and query params from a given url
 func normalizeHref(href string, identifier string) string {
 	index := strings.Index(href, identifier)
 	if index == -1 {

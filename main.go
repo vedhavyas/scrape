@@ -2,12 +2,11 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/url"
 	"runtime"
 	"sync"
-
-	"fmt"
 
 	"github.com/vedhavyas/sitemap-generator/bot"
 	"github.com/vedhavyas/sitemap-generator/utils"

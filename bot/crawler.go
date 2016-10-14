@@ -9,7 +9,7 @@ import (
 	"github.com/vedhavyas/sitemap-generator/utils"
 )
 
-//Crawler model to crawl pushed urls and submit urls back
+//Crawler model will crawl pushed urls and submit crawled results back to broker
 type Crawler struct {
 	Id          int
 	ReceiveWork chan []string
@@ -22,18 +22,21 @@ type Crawler struct {
 	working bool
 }
 
+//SetWorking sets the mode of the crawling bot
 func (c *Crawler) SetWorking(working bool) {
 	c.Lock()
 	defer c.Unlock()
 	c.working = working
 }
 
+//IsWorking returns the mode of the crawling bot
 func (c *Crawler) IsWorking() bool {
 	c.RLock()
 	defer c.RUnlock()
 	return c.working
 }
 
+//StartCrawling will start listening on the RecieveWork from Broker
 func (c *Crawler) StartCrawling() {
 	c.Client = http.Client{}
 	for {
@@ -51,6 +54,7 @@ func (c *Crawler) StartCrawling() {
 	}
 }
 
+//CrawlPage will crawl the given url and submits the data back to Broker
 func (c *Crawler) CrawlPage(pageURL string) {
 	resp, err := c.Client.Get(pageURL)
 

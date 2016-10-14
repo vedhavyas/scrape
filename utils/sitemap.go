@@ -2,6 +2,7 @@ package utils
 
 import "os"
 
+//GenerateSiteMap will write the crawled url to given file
 func GenerateSiteMap(fileName string, urls []string) error {
 
 	err := deleteFileIfExists(fileName)
@@ -28,6 +29,7 @@ func GenerateSiteMap(fileName string, urls []string) error {
 
 }
 
+//GenerateAssetFile writes assets fetched from each page to given file
 func GenerateAssetFile(fileName string, assetInPages map[string][]string) error {
 	err := deleteFileIfExists(fileName)
 	if err != nil {
@@ -51,6 +53,7 @@ func GenerateAssetFile(fileName string, assetInPages map[string][]string) error 
 
 }
 
+//deleteFileIfExists deletes a file if exists
 func deleteFileIfExists(fileName string) error {
 	//delete old file first
 	if _, err := os.Stat(fileName); err == nil {
