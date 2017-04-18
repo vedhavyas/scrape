@@ -8,7 +8,8 @@ import (
 )
 
 //Page holds the crawled data of a given page
-//Can be further be expanded to hold optional sitemap fields like lastmod, changefreq, priority
+//Can be further be expanded to hold optional site-map
+//fields like last modified, change frequency, priority
 type Page struct {
 	PageURL string
 	Links   []string
@@ -16,7 +17,7 @@ type Page struct {
 	IsAsset bool
 }
 
-//Broker is the one which distrubutes submitted crawled data back to crawlers
+//Broker is the one which distributes submitted crawled data back to crawlers
 type Broker struct {
 	StartingURL  string
 	SubmitWorkCh chan *Page

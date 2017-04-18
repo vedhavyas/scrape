@@ -22,7 +22,7 @@ type Configuration struct {
 func main() {
 	log.SetFlags(log.Ldate | log.Lshortfile)
 
-	urlPTR := flag.String("url", "", "Starting URL")
+	urlPTR := flag.String("url", "https://vedhavyas.com", "Starting URL")
 	maxProcsPTR := flag.Int("max-procs", runtime.NumCPU()*2, "Number of CPU to use")
 	flag.Parse()
 
@@ -82,12 +82,12 @@ func main() {
 
 	wg.Wait()
 
-	sitemapFileName := "sitemap.xml"
-	err = utils.GenerateSiteMap(sitemapFileName, broker.CrawledPages)
+	fileName := "sitemap.xml"
+	err = utils.GenerateSiteMap(fileName, broker.CrawledPages)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Sitemap generated with name \"%v\"\n", sitemapFileName)
+	fmt.Printf("Sitemap generated with name \"%v\"\n", fileName)
 
 	assetsLinkFileName := "assets.txt"
 	err = utils.GenerateAssetFile(assetsLinkFileName, broker.AssetsInPage)

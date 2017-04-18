@@ -34,7 +34,7 @@ func ExtractLinksFromHTML(httpBody io.Reader) ([]string, []string) {
 	}
 }
 
-//findLinks will extarct links from anchor tags and img tags
+//findLinks will extract links from anchor tags and img tags
 func findLinks(token html.Token, links []string, key string) []string {
 	for _, attr := range token.Attr {
 		if attr.Key == key {
