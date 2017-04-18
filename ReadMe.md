@@ -1,9 +1,9 @@
-#Sitemap Generator [![Go Report Card](https://goreportcard.com/badge/github.com/vedhavyas/sitemap-generator)](https://goreportcard.com/report/github.com/vedhavyas/sitemap-generator)
+# Sitemap Generator [![Go Report Card](https://goreportcard.com/badge/github.com/vedhavyas/sitemap-generator)](https://goreportcard.com/report/github.com/vedhavyas/sitemap-generator)
 
-##Installation:
+## Installation:
 `go get github.com/vedhavyas/sitemap-generator`
 
-##Available command line options:
+## Available command line options:
 `sitemap-generator --help`
 
 
