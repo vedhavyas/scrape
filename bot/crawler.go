@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-
-	"github.com/vedhavyas/scrape/utils"
 )
 
 //Crawler model will crawl pushed urls and submit crawled results back to broker
@@ -74,16 +72,16 @@ func (c *Crawler) CrawlPage(pageURL string) {
 	isAsset := true
 	if strings.Contains(resp.Header.Get("Content-type"), "text/html") {
 		isAsset = false
-		hrefs, assets = utils.ExtractLinksFromHTML(resp.Body)
-		hrefs, err = utils.ResolveURLS(pageURL, hrefs, true)
-		if err != nil {
-			log.Println(err)
-		}
-
-		assets, err = utils.ResolveURLS(pageURL, assets, false)
-		if err != nil {
-			log.Println(err)
-		}
+		//hrefs, assets = utils.ExtractLinksFromHTML(resp.Body)
+		//hrefs, err = utils.ResolveURLS(pageURL, hrefs, true)
+		//if err != nil {
+		//	log.Println(err)
+		//}
+		//
+		//assets, err = utils.ResolveURLS(pageURL, assets, false)
+		//if err != nil {
+		//	log.Println(err)
+		//}
 	}
 
 	resp.Body.Close()

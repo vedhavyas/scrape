@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"sync"
 )
 
 // gru acts a medium for the minions and does the following
 // 1. Distributed the links to minions
-// 2. Normalize and filter the links minions scrapped
+// 2. limit domain
 type gru struct {
 	wg           *sync.WaitGroup
 	scrapped     map[string]int     // scrapped holds the map of urls minions crawled and times of repetitions
@@ -20,8 +21,8 @@ type gru struct {
 
 // minionDump is the crawl dump by single minion of a given sourceLink
 type minionDump struct {
-	sourceLink string   // sourceLink the minion crawled
-	links      []string // links obtained from sourceLink page
+	sourceLink *url.URL   // sourceLink the minion crawled
+	links      []*url.URL // links obtained from sourceLink page
 }
 
 // run starts the gru tasks
