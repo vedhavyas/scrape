@@ -11,10 +11,11 @@ import (
 // 1. Distributed the links to minions
 // 2. Normalize and filter the links minions scrapped
 type gru struct {
-	scrapped   map[string]int     // scrapped holds the map of urls minions crawled and times of repetitions
-	unScrapped []string           // unScrapped are those that are yet to be crawled by the minions
-	submitDump chan []*minionDump // submitDump listens for minions to submit their dumps
-	wg         *sync.WaitGroup
+	wg           *sync.WaitGroup
+	scrapped     map[string]int     // scrapped holds the map of urls minions crawled and times of repetitions
+	unScrapped   []string           // unScrapped are those that are yet to be crawled by the minions
+	submitDumpCh chan []*minionDump // submitDump listens for minions to submit their dumps
+	depth        int                // depth of crawl
 }
 
 // minionDump is the crawl dump by single minion of a given sourceLink
@@ -31,7 +32,7 @@ func (g *gru) run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case mds := <-g.submitDump:
+		case mds := <-g.submitDumpCh:
 			//TODO process dump
 			fmt.Println(mds)
 		}
