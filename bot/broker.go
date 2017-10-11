@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/vedhavyas/sitemap-generator/utils"
+	"github.com/vedhavyas/scrape/utils"
 )
 
 //Page holds the crawled data of a given page

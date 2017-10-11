@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/vedhavyas/sitemap-generator/utils"
+	"github.com/vedhavyas/scrape/utils"
 )
 
 //Crawler model will crawl pushed urls and submit crawled results back to broker

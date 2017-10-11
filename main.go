@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/vedhavyas/sitemap-generator/bot"
-	"github.com/vedhavyas/sitemap-generator/utils"
+	"github.com/vedhavyas/scrape/bot"
+	"github.com/vedhavyas/scrape/utils"
 )
 
 //Configuration holds the configuration passed during startup
