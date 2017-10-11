@@ -36,7 +36,7 @@ func normalizeHref(href string, identifier string) string {
 	return href[:index]
 }
 
-//extractURLs will extract links from anchor tags and img tags
+//extractURLs will extract urls from anchor tags and img tags
 func extractURLs(sourceURL *url.URL, token html.Token, key string) (links []*url.URL, failedURLs []string) {
 	for _, attr := range token.Attr {
 		if attr.Key == key {
@@ -59,7 +59,7 @@ func extractURLs(sourceURL *url.URL, token html.Token, key string) (links []*url
 	return links, failedURLs
 }
 
-//extractURLsFromHTML extracts all href links inside a tags from an html
+//extractURLsFromHTML extracts all href urls inside a tags from an html
 //does not close the reader when done
 func extractURLsFromHTML(sourceURL *url.URL, httpBody io.Reader) (urls []*url.URL, failedURLs []string) {
 	page := html.NewTokenizer(httpBody)
