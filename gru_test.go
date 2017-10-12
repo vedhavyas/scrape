@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/url"
+	"reflect"
 	"sync"
 	"testing"
 )
@@ -130,5 +131,129 @@ func Test_distributePayload(t *testing.T) {
 			t.Fatalf("expected %d urls but got %d", c.urls, count)
 		}
 
+	}
+}
+
+func Test_filterDomainURLs(t *testing.T) {
+	tests := []struct {
+		urls      []string
+		regexStr  string
+		matched   []string
+		unMatched []string
+	}{
+		{
+			urls: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+				"http://test.com",
+			},
+			regexStr: "github",
+			matched: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+			},
+			unMatched: []string{
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+				"http://test.com",
+			},
+		},
+		{
+			urls: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+				"http://test.com",
+			},
+			regexStr: "github|vedhavyas",
+			matched: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+			},
+			unMatched: []string{
+				"http://test.com",
+			},
+		},
+		{
+			urls: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+				"http://test.com",
+			},
+			regexStr: "test|vedhavyas",
+			matched: []string{
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+				"http://test.com",
+			},
+			unMatched: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+			},
+		},
+
+		{
+			urls: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+				"http://test.com",
+			},
+			regexStr: "hahaha",
+			unMatched: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+				"http://test.com",
+			},
+		},
+	}
+
+	g := &gru{}
+	for _, c := range tests {
+		err := setDomainRegex(g, c.regexStr)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		urls, err := urlStrToURLs(c.urls)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		m, um := filterDomainURLs(g.domainRegex, urls)
+		mr, umr := urlsToStr(m), urlsToStr(um)
+		if !reflect.DeepEqual(c.matched, mr) {
+			t.Fatalf("expected %v urls to match but got %v", c.matched, mr)
+		}
+
+		if !reflect.DeepEqual(c.unMatched, umr) {
+			t.Fatalf("expected %v urls to unmatch but got %v", c.unMatched, umr)
+		}
 	}
 }

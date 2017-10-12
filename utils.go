@@ -83,3 +83,26 @@ func extractURLsFromHTML(sourceURL *url.URL, httpBody io.Reader) (urls []*url.UR
 		}
 	}
 }
+
+// urlsToStr coverts []*url.URL to []string
+func urlsToStr(urls []*url.URL) (urlsStr []string) {
+	for _, u := range urls {
+		urlsStr = append(urlsStr, u.String())
+	}
+
+	return urlsStr
+}
+
+// urlStrToURLs converts raw urls to urlURL. returns on first error
+func urlStrToURLs(urlsStr []string) (urls []*url.URL, err error) {
+	for _, r := range urlsStr {
+		u, err := url.Parse(r)
+		if err != nil {
+			return urls, err
+		}
+
+		urls = append(urls, u)
+	}
+
+	return urls, nil
+}

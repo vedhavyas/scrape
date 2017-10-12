@@ -3,21 +3,25 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/url"
+	"regexp"
 )
 
 // gru acts a medium for the minions and does the following
 // 1. Distributed the urls to minions
 // 2. limit domain
 type gru struct {
-	baseURL        *url.URL           // starting url at maxDepth 0
-	minions        []*minion          // minions that are controlled by this gru
-	scrappedUnique map[string]int     // scrappedUnique holds the map of unique urls we crawled and times its repeated
-	unScrapped     map[int][]*url.URL // unScrapped are those that are yet to be crawled by the minions
-	scrappedDepth  map[int][]*url.URL // scrappedDepth holds url found in each maxDepth
-	submitDumpCh   chan []*minionDump // submitDump listens for minions to submit their dumps
-	maxDepth       int                // maxDepth of crawl, -1 means no limit for maxDepth
+	baseURL        *url.URL            // starting url at maxDepth 0
+	minions        []*minion           // minions that are controlled by this gru
+	scrappedUnique map[string]int      // scrappedUnique holds the map of unique urls we crawled and times its repeated
+	unScrapped     map[int][]*url.URL  // unScrapped are those that are yet to be crawled by the minions
+	scrappedDepth  map[int][]*url.URL  // scrappedDepth holds url found in each maxDepth
+	skippedURLs    map[string][]string // skippedURLs contains urls from different domains(if domainRegex is failed) and all failed urls
+	submitDumpCh   chan []*minionDump  // submitDump listens for minions to submit their dumps
+	domainRegex    *regexp.Regexp      // restricts crawling the urls that pass the
+	maxDepth       int                 // maxDepth of crawl, -1 means no limit for maxDepth
 	interrupted    bool
 }
 
@@ -44,8 +48,34 @@ func newGru(baseURL *url.URL, maxDepth int) *gru {
 		unScrapped:     make(map[int][]*url.URL),
 		scrappedDepth:  make(map[int][]*url.URL),
 		submitDumpCh:   make(chan []*minionDump),
+		skippedURLs:    make(map[string][]string),
 		maxDepth:       maxDepth,
 	}
+}
+
+// setDomainRegex sets the domainRegex for the gru
+func setDomainRegex(g *gru, regexStr string) error {
+	r, err := regexp.Compile(regexStr)
+	if err != nil {
+		return fmt.Errorf("failed to compile domain regex: %v\n", err)
+	}
+
+	g.domainRegex = r
+	return nil
+}
+
+// filterDomainURLs will return matched and unmatched urls from given urls
+func filterDomainURLs(r *regexp.Regexp, urls []*url.URL) (matched, unmatched []*url.URL) {
+	for _, u := range urls {
+		if !r.MatchString(u.String()) {
+			unmatched = append(unmatched, u)
+			continue
+		}
+
+		matched = append(matched, u)
+	}
+
+	return matched, unmatched
 }
 
 // getIdleMinions will return all the idle minions
@@ -113,8 +143,8 @@ func processDump(g *gru, mds []*minionDump) (finished bool) {
 	return false
 }
 
-// run starts the gru tasks
-func (g *gru) run(ctx context.Context) {
+// scrape will make gru to start scraping
+func run(g *gru, ctx context.Context) {
 	log.Printf("Starting Gru with Base URL: %s\n", g.unScrapped[0])
 
 	for {
