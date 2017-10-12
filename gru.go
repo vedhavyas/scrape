@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/url"
 )
@@ -10,12 +11,13 @@ import (
 // 1. Distributed the urls to minions
 // 2. limit domain
 type gru struct {
+	baseURL        *url.URL           // starting url at maxDepth 0
 	minions        []*minion          // minions that are controlled by this gru
 	scrappedUnique map[string]int     // scrappedUnique holds the map of unique urls we crawled and times its repeated
-	unScrapped     [][]*url.URL       // unScrapped are those that are yet to be crawled by the minions
-	scrappedDepth  [][]*url.URL       // scrappedDepth holds url found in each depth
+	unScrapped     map[int][]*url.URL // unScrapped are those that are yet to be crawled by the minions
+	scrappedDepth  map[int][]*url.URL // scrappedDepth holds url found in each maxDepth
 	submitDumpCh   chan []*minionDump // submitDump listens for minions to submit their dumps
-	depth          int                // depth of crawl, -1 means no limit for depth
+	maxDepth       int                // maxDepth of crawl, -1 means no limit for maxDepth
 	interrupted    bool
 }
 
@@ -34,6 +36,18 @@ type minionDump struct {
 	err        error      // reason why url is not crawled
 }
 
+// newGru returns a new gru with given base url and maxDepth
+func newGru(baseURL *url.URL, maxDepth int) *gru {
+	return &gru{
+		baseURL:        baseURL,
+		scrappedUnique: make(map[string]int),
+		unScrapped:     make(map[int][]*url.URL),
+		scrappedDepth:  make(map[int][]*url.URL),
+		submitDumpCh:   make(chan []*minionDump),
+		maxDepth:       maxDepth,
+	}
+}
+
 // getIdleMinions will return all the idle minions
 func getIdleMinions(g *gru) (idleMinions []*minion) {
 	for _, m := range g.minions {
@@ -47,17 +61,49 @@ func getIdleMinions(g *gru) (idleMinions []*minion) {
 	return idleMinions
 }
 
-// distributePayload will distribute the given
-func distributePayload(g *gru, depth int, urls []*url.URL) {
+// pushPayloadToMinion will push payload to minion
+func pushPayloadToMinion(m *minion, depth int, urls []*url.URL) {
+	m.payloadCh <- &minionPayload{
+		currentDepth: depth,
+		urls:         urls,
+	}
+}
 
+// distributePayload will distribute the given urls to idle minions, error when there are no idle minions
+func distributePayload(g *gru, depth int, urls []*url.URL) error {
+	ims := getIdleMinions(g)
+	if len(ims) == 0 {
+		return errors.New("all minions are busy")
+	}
+
+	if len(urls) <= len(ims) {
+		for i, u := range urls {
+			pushPayloadToMinion(ims[i], depth, []*url.URL{u})
+		}
+		return nil
+	}
+
+	wd := len(urls) / len(ims)
+	i := 0
+	for mi, m := range ims {
+		if mi+1 == len(ims) {
+			pushPayloadToMinion(m, depth, urls[i:])
+			continue
+		}
+
+		pushPayloadToMinion(m, depth, urls[i:i+wd])
+		i += wd
+
+	}
+	return nil
 }
 
 // processDump process the minion dumps and signals when the crawl is complete
 func processDump(g *gru, mds []*minionDump) (finished bool) {
 	/*
-		1. check the return depth
+		1. check the return maxDepth
 			1. if greater equal, then push to scrapped
-			2. else push to unscrapped with depth and urls
+			2. else push to unscrapped with maxDepth and urls
 		2. If zero unprocessed and all minions free
 			1. If so, we are done
 			2. else, we wait for them to continue
