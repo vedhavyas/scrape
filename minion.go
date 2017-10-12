@@ -11,10 +11,10 @@ import (
 // minion crawls the link, scrape urls normalises then and returns the dump to gru
 type minion struct {
 	name      string
-	busy      bool                 // busy represents whether minion is idle/busy
-	mu        *sync.RWMutex        // protects the above
-	payloadCh <-chan []*url.URL    // payload listens for urls to be scrapped
-	gruDumpCh chan<- []*minionDump // gruDumpCh to send finished data to gru
+	busy      bool                  // busy represents whether minion is idle/busy
+	mu        *sync.RWMutex         // protects the above
+	payloadCh <-chan *minionPayload // payload listens for urls to be scrapped
+	gruDumpCh chan<- []*minionDump  // gruDumpCh to send finished data to gru
 }
 
 // isBusy says if the minion is busy or idle
@@ -26,10 +26,11 @@ func (m *minion) isBusy() bool {
 }
 
 // crawlURL crawls the url and extracts the urls from the page
-func crawlURL(u *url.URL) (md *minionDump) {
+func crawlURL(depth int, u *url.URL) (md *minionDump) {
 	resp, err := http.DefaultClient.Get(u.String())
 	if err != nil {
 		return &minionDump{
+			depth:     depth + 1,
 			sourceURL: u,
 			err:       err,
 		}
@@ -38,6 +39,7 @@ func crawlURL(u *url.URL) (md *minionDump) {
 	defer resp.Body.Close()
 	s, f := extractURLsFromHTML(u, resp.Body)
 	return &minionDump{
+		depth:      depth + 1,
 		sourceURL:  u,
 		urls:       s,
 		failedURLs: f,
@@ -45,9 +47,9 @@ func crawlURL(u *url.URL) (md *minionDump) {
 }
 
 // crawlURLs crawls given urls and return extracted url from the page
-func crawlURLs(urls []*url.URL) (mds []*minionDump) {
+func crawlURLs(depth int, urls []*url.URL) (mds []*minionDump) {
 	for _, u := range urls {
-		md := crawlURL(u)
+		md := crawlURL(depth, u)
 		mds = append(mds, md)
 	}
 
@@ -62,9 +64,9 @@ func (m *minion) run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case urls := <-m.payloadCh:
+		case mp := <-m.payloadCh:
 			m.busy = true
-			mds := crawlURLs(urls)
+			mds := crawlURLs(mp.currentDepth, mp.urls)
 			m.busy = false
 			go func(mds []*minionDump) { m.gruDumpCh <- mds }(mds)
 		}
