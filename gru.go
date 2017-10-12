@@ -42,7 +42,7 @@ type minionDump struct {
 
 // newGru returns a new gru with given base url and maxDepth
 func newGru(baseURL *url.URL, maxDepth int) *gru {
-	return &gru{
+	g := &gru{
 		baseURL:        baseURL,
 		scrappedUnique: make(map[string]int),
 		unScrapped:     make(map[int][]*url.URL),
@@ -51,6 +51,11 @@ func newGru(baseURL *url.URL, maxDepth int) *gru {
 		skippedURLs:    make(map[string][]string),
 		maxDepth:       maxDepth,
 	}
+
+	r, _ := regexp.Compile(baseURL.Hostname())
+	g.domainRegex = r
+	log.Printf("gru: setting default domain regex to %v\n", r)
+	return g
 }
 
 // setDomainRegex sets the domainRegex for the gru

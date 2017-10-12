@@ -136,12 +136,14 @@ func Test_distributePayload(t *testing.T) {
 
 func Test_filterDomainURLs(t *testing.T) {
 	tests := []struct {
+		baseURL   string
 		urls      []string
 		regexStr  string
 		matched   []string
 		unMatched []string
 	}{
 		{
+			baseURL: "http://test.com",
 			urls: []string{
 				"http://github.com",
 				"http://blog.github.com",
@@ -165,6 +167,7 @@ func Test_filterDomainURLs(t *testing.T) {
 			},
 		},
 		{
+			baseURL: "http://test.com",
 			urls: []string{
 				"http://github.com",
 				"http://blog.github.com",
@@ -188,6 +191,7 @@ func Test_filterDomainURLs(t *testing.T) {
 			},
 		},
 		{
+			baseURL: "http://test.com",
 			urls: []string{
 				"http://github.com",
 				"http://blog.github.com",
@@ -212,6 +216,31 @@ func Test_filterDomainURLs(t *testing.T) {
 		},
 
 		{
+			baseURL: "http://test.com",
+			urls: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+				"http://test.com",
+			},
+			matched: []string{
+				"http://test.com",
+			},
+			unMatched: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+			},
+		},
+
+		{
+			baseURL: "http://test.com",
 			urls: []string{
 				"http://github.com",
 				"http://blog.github.com",
@@ -234,11 +263,14 @@ func Test_filterDomainURLs(t *testing.T) {
 		},
 	}
 
-	g := &gru{}
 	for _, c := range tests {
-		err := setDomainRegex(g, c.regexStr)
-		if err != nil {
-			t.Fatal(err)
+		bu, _ := url.Parse(c.baseURL)
+		g := newGru(bu, 1)
+		if c.regexStr != "" {
+			err := setDomainRegex(g, c.regexStr)
+			if err != nil {
+				t.Fatal(err)
+			}
 		}
 
 		urls, err := urlStrToURLs(c.urls)
