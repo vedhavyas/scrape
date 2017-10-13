@@ -86,7 +86,7 @@ func filterDomainURLs(r *regexp.Regexp, urls []*url.URL) (matched, unmatched []*
 // getIdleMinions will return all the idle minions
 func getIdleMinions(g *gru) (idleMinions []*minion) {
 	for _, m := range g.minions {
-		if m.isBusy() {
+		if isBusy(m) {
 			continue
 		}
 
@@ -148,8 +148,8 @@ func processDump(g *gru, mds []*minionDump) (finished bool) {
 	return false
 }
 
-// scrape will make gru to start scraping
-func run(g *gru, ctx context.Context) {
+// runGru initiates gru to start scraping
+func runGru(g *gru, ctx context.Context) {
 	log.Printf("Starting Gru with Base URL: %s\n", g.unScrapped[0])
 
 	for {

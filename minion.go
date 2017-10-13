@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 )
 
@@ -28,7 +30,7 @@ func newMinion(name string, gruDumpCh chan<- []*minionDump) *minion {
 }
 
 // isBusy says if the minion is busy or idle
-func (m *minion) isBusy() bool {
+func isBusy(m *minion) bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -47,6 +49,24 @@ func crawlURL(depth int, u *url.URL) (md *minionDump) {
 	}
 
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return &minionDump{
+			depth:     depth + 1,
+			sourceURL: u,
+			err:       fmt.Errorf("url responsed with code %d", resp.StatusCode),
+		}
+	}
+
+	ct := resp.Header.Get("Content-type")
+	if ct != "" && !strings.Contains(ct, "text/html") {
+		return &minionDump{
+			depth:     depth + 1,
+			sourceURL: u,
+			err:       fmt.Errorf("unknown content type: %s", ct),
+		}
+	}
+
 	s, f := extractURLsFromHTML(u, resp.Body)
 	return &minionDump{
 		depth:      depth + 1,
@@ -66,8 +86,8 @@ func crawlURLs(depth int, urls []*url.URL) (mds []*minionDump) {
 	return mds
 }
 
-// run starts the minion and
-func (m *minion) run(ctx context.Context) {
+// runMinion starts the minion
+func runMinion(m *minion, ctx context.Context) {
 	log.Printf("Starting %s...\n", m.name)
 
 	for {
