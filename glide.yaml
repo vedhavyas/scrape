@@ -1,0 +1,5 @@
+package: github.com/vedhavyas/scrape
+import:
+- package: golang.org/x/net
+  subpackages:
+  - html
