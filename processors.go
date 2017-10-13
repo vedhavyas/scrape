@@ -63,7 +63,17 @@ func maxDepthCheckProcessor() processor {
 		}
 
 		// add all urls to scraped depth
-		g.scrappedDepth[md.depth] = append(g.scrappedDepth[md.depth], md.urls...)
+		if len(md.urls) < 1 {
+			return false
+		}
+
+		g.scrapped[md.depth] = append(g.scrapped[md.depth], md.urls...)
+		for _, u := range md.urls {
+			if g.domainRegex.MatchString(u.Hostname()) {
+				g.scrappedUnique[u.String()]++
+				continue
+			}
+		}
 		return false
 	})
 }
@@ -78,7 +88,7 @@ func domainFilterProcessor() processor {
 		m := []*url.URL{}
 		um := []string{}
 		for _, u := range md.urls {
-			if g.domainRegex.MatchString(u.String()) {
+			if g.domainRegex.MatchString(u.Hostname()) {
 				m = append(m, u)
 				continue
 			}

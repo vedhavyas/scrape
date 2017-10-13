@@ -187,8 +187,8 @@ func TestProcessor_maxDepthProcessor(t *testing.T) {
 			t.Fatalf("expected %t but got %t", c.result, r)
 		}
 
-		if !reflect.DeepEqual(g.scrappedDepth[md.depth], urls) {
-			t.Fatalf("expected %v urls but got %v", c.urls, g.scrappedDepth[md.depth])
+		if !reflect.DeepEqual(g.scrapped[md.depth], urls) {
+			t.Fatalf("expected %v urls but got %v", c.urls, g.scrapped[md.depth])
 		}
 	}
 }

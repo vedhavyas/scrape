@@ -3,21 +3,29 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
-
 	"fmt"
+	"log"
+	"os"
 
 	"github.com/vedhavyas/scrape"
 )
 
 func main() {
 	log.SetFlags(log.Ldate | log.Lshortfile)
+	flag.CommandLine.SetOutput(os.Stdout)
 
 	baseURL := flag.String("url", "https://vedhavyas.com", "Starting URL")
 	maxDepth := flag.Int("max-depth", -1, "Max depth to Crawl")
-	domainRegex := flag.String("domain-regex", "", "Domain regex to limit crawls to")
-	sitemapFile := flag.String("sitemap", "", "file location to write sitemap to")
+	domainRegex := flag.String("domain-regex", "", "Domain regex to limit crawls to. Defaults to base url domain")
+	sitemapFile := flag.String("sitemap", "", "File location to write sitemap to")
+	help := flag.Bool("help", false, "Show Options")
 	flag.Parse()
+
+	if *help {
+		fmt.Fprintf(os.Stdout, "Usage of %s:\n", os.Args[0])
+		flag.PrintDefaults()
+		return
+	}
 
 	if *baseURL == "" {
 		log.Fatal("start URL cannot be empty")

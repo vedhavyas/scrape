@@ -17,7 +17,7 @@ type gru struct {
 	minions        []*minion           // minions that are controlled by this gru
 	scrappedUnique map[string]int      // scrappedUnique holds the map of unique urls we crawled and times its repeated
 	unScrapped     map[int][]*url.URL  // unScrapped are those that are yet to be crawled by the minions
-	scrappedDepth  map[int][]*url.URL  // scrappedDepth holds url found in each depth
+	scrapped       map[int][]*url.URL  // scrapped holds url found in each depth
 	skippedURLs    map[string][]string // skippedURLs contains urls from different domains(if domainRegex is failed) and all invalid urls
 	errorURLs      map[string]error    // reason why this url was not crawled
 	submitDumpCh   chan *minionDumps   // submitDump listens for minions to submit their dumps
@@ -55,7 +55,7 @@ func newGru(baseURL *url.URL, maxDepth int) *gru {
 		baseURL:        baseURL,
 		scrappedUnique: make(map[string]int),
 		unScrapped:     make(map[int][]*url.URL),
-		scrappedDepth:  make(map[int][]*url.URL),
+		scrapped:       make(map[int][]*url.URL),
 		skippedURLs:    make(map[string][]string),
 		errorURLs:      make(map[string]error),
 		submitDumpCh:   make(chan *minionDumps),
@@ -139,6 +139,7 @@ func distributePayload(g *gru, depth int, urls []*url.URL) error {
 
 // processDump will process a single minionDump
 func processDump(g *gru, md *minionDump) {
+	g.scrapped[md.depth-1] = append(g.scrapped[md.depth-1], md.sourceURL)
 	for _, p := range g.processors {
 		r := p.process(g, md)
 		if !r {
@@ -147,8 +148,9 @@ func processDump(g *gru, md *minionDump) {
 	}
 
 	// add the md.urls to unscrapped and md.source to scraped
-	g.unScrapped[md.depth] = append(g.unScrapped[md.depth], md.urls...)
-	g.scrappedDepth[md.depth-1] = append(g.scrappedDepth[md.depth-1], md.sourceURL)
+	if len(md.urls) > 0 {
+		g.unScrapped[md.depth] = append(g.unScrapped[md.depth], md.urls...)
+	}
 }
 
 // processDumps process the minion dumps and signals when the crawl is complete
@@ -189,7 +191,8 @@ func processDumps(g *gru, mds []*minionDump) (finished bool) {
 
 // startGru initiates gru to start scraping
 func startGru(ctx context.Context, g *gru) {
-	log.Printf("Starting Gru with Base URL: %s\n", g.unScrapped[0])
+	log.Printf("Starting Gru with Base URL: %s\n", g.baseURL)
+	distributePayload(g, 0, []*url.URL{g.baseURL})
 
 	for {
 		select {

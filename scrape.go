@@ -84,7 +84,7 @@ func gruToResponse(g *gru) *Response {
 	return &Response{
 		BaseURL:      g.baseURL,
 		UniqueURLs:   g.scrappedUnique,
-		URLsPerDepth: g.scrappedDepth,
+		URLsPerDepth: g.scrapped,
 		SkippedURLs:  g.skippedURLs,
 		ErrorURLs:    g.errorURLs,
 		DomainRegex:  g.domainRegex,
