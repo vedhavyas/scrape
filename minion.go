@@ -67,20 +67,19 @@ func crawlURL(depth int, u *url.URL) (md *minionDump) {
 		}
 	}
 
-	s, f := extractURLsFromHTML(u, resp.Body)
+	s, uu := extractURLsFromHTML(u, resp.Body)
 	return &minionDump{
-		depth:      depth + 1,
-		sourceURL:  u,
-		urls:       s,
-		failedURLs: f,
+		depth:       depth + 1,
+		sourceURL:   u,
+		urls:        s,
+		unknownURLs: uu,
 	}
 }
 
 // crawlURLs crawls given urls and return extracted url from the page
 func crawlURLs(depth int, urls []*url.URL) (mds []*minionDump) {
 	for _, u := range urls {
-		md := crawlURL(depth, u)
-		mds = append(mds, md)
+		mds = append(mds, crawlURL(depth, u))
 	}
 
 	return mds

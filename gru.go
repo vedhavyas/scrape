@@ -19,10 +19,12 @@ type gru struct {
 	unScrapped     map[int][]*url.URL  // unScrapped are those that are yet to be crawled by the minions
 	scrappedDepth  map[int][]*url.URL  // scrappedDepth holds url found in each maxDepth
 	skippedURLs    map[string][]string // skippedURLs contains urls from different domains(if domainRegex is failed) and all failed urls
+	errorURLs      map[string]error    // reason why this url was not crawled
 	submitDumpCh   chan []*minionDump  // submitDump listens for minions to submit their dumps
 	domainRegex    *regexp.Regexp      // restricts crawling the urls that pass the
 	maxDepth       int                 // maxDepth of crawl, -1 means no limit for maxDepth
-	interrupted    bool
+	interrupted    bool                // says if gru was interrupted while scraping
+	processors     []processor         // list of url processors
 }
 
 // minionPayload holds the urls for the minion to crawl and scrape
@@ -33,11 +35,11 @@ type minionPayload struct {
 
 // minionDump is the crawl dump by single minion of a given sourceURL
 type minionDump struct {
-	depth      int        // depth at which the urls are scrapped(+1 of sourceURL depth)
-	sourceURL  *url.URL   // sourceURL the minion crawled
-	urls       []*url.URL // urls obtained from sourceURL page
-	failedURLs []string   // urls which couldn't be normalized
-	err        error      // reason why url is not crawled
+	depth       int        // depth at which the urls are scrapped(+1 of sourceURL depth)
+	sourceURL   *url.URL   // sourceURL the minion crawled
+	urls        []*url.URL // urls obtained from sourceURL page
+	unknownURLs []string   // urls which couldn't be normalized
+	err         error      // reason why url is not crawled
 }
 
 // newGru returns a new gru with given base url and maxDepth
@@ -133,18 +135,22 @@ func distributePayload(g *gru, depth int, urls []*url.URL) error {
 	return nil
 }
 
-// processDump process the minion dumps and signals when the crawl is complete
-func processDump(g *gru, mds []*minionDump) (finished bool) {
+// processDump will process a single minionDump
+func processDump(g *gru, md *minionDump) {
 	/*
-		1. check the return maxDepth
-			1. if greater equal, then push to scrapped
-			2. else push to unscrapped with maxDepth and urls
-		2. If zero unprocessed and all minions free
-			1. If so, we are done
-			2. else, we wait for them to continue
-		3. else,
-			1. Assign
+		1. Add source url to unique
+		2. Add failed url to errorURLs
+		3. Add unknown urls to skipped
+		3. Check the max depth
+		4. Filter urls with domain regex
+
 	*/
+
+}
+
+// processDumps process the minion dumps and signals when the crawl is complete
+func processDumps(g *gru, mds []*minionDump) (finished bool) {
+	// add each
 	return false
 }
 
@@ -158,7 +164,7 @@ func runGru(g *gru, ctx context.Context) {
 			g.interrupted = true
 			return
 		case mds := <-g.submitDumpCh:
-			done := processDump(g, mds)
+			done := processDumps(g, mds)
 			if done {
 				return
 			}
