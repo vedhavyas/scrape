@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"regexp"
 	"runtime"
+	"sort"
 	"strings"
 )
 
@@ -32,7 +33,7 @@ func (r Response) String() string {
 	if len(r.UniqueURLs) < 1 {
 		return buffer.String()
 	}
-	buffer.WriteString("Unique URLs scrapped:\n")
+	buffer.WriteString(fmt.Sprintf("Unique URLs scrapped: %d\n", len(r.UniqueURLs)))
 	buffer.WriteString(strings.Repeat("-", 10) + "\n")
 	for u := range r.UniqueURLs {
 		buffer.WriteString(u + "\n")
@@ -40,14 +41,19 @@ func (r Response) String() string {
 	buffer.WriteString(strings.Repeat("-", 10) + "\n")
 
 	if len(r.URLsPerDepth) > 0 {
+		var keys []int
+		for i := range r.URLsPerDepth {
+			keys = append(keys, i)
+		}
+		sort.Ints(keys)
 		buffer.WriteString("\n")
 		buffer.WriteString("URLs scrapped per depth:\n")
 		buffer.WriteString(strings.Repeat("-", 10) + "\n")
-		for i, urls := range r.URLsPerDepth {
+		for _, i := range keys {
 			buffer.WriteString("\n")
 			buffer.WriteString(fmt.Sprintf("Depth: %d\n", i))
 			buffer.WriteString(strings.Repeat("-", 10) + "\n")
-			for _, u := range urls {
+			for _, u := range r.URLsPerDepth[i] {
 				buffer.WriteString(u.String() + "\n")
 			}
 			buffer.WriteString(strings.Repeat("-", 10) + "\n")
@@ -58,9 +64,14 @@ func (r Response) String() string {
 		buffer.WriteString("\n")
 		buffer.WriteString("Skipped URLs:\n")
 		buffer.WriteString(strings.Repeat("-", 10) + "\n")
+		localUnique := make(map[string]bool)
 		for _, urls := range r.SkippedURLs {
 			for _, u := range urls {
+				if _, ok := localUnique[u]; ok {
+					continue
+				}
 				buffer.WriteString(u + "\n")
+				localUnique[u] = true
 			}
 		}
 		buffer.WriteString(strings.Repeat("-", 10) + "\n")
