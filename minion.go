@@ -13,14 +13,14 @@ import (
 // minion crawls the link, scrape urls normalises then and returns the dump to gru
 type minion struct {
 	name      string
-	busy      bool                 // busy represents whether minion is idle/busy
-	mu        *sync.RWMutex        // protects the above
-	payloadCh chan *minionPayload  // payload listens for urls to be scrapped
-	gruDumpCh chan<- []*minionDump // gruDumpCh to send finished data to gru
+	busy      bool                // busy represents whether minion is idle/busy
+	mu        *sync.RWMutex       // protects the above
+	payloadCh chan *minionPayload // payload listens for urls to be scrapped
+	gruDumpCh chan<- *minionDumps // gruDumpCh to send finished data to gru
 }
 
 // newMinion returns a new minion under given gru
-func newMinion(name string, gruDumpCh chan<- []*minionDump) *minion {
+func newMinion(name string, gruDumpCh chan<- *minionDumps) *minion {
 	return &minion{
 		name:      name,
 		mu:        &sync.RWMutex{},
@@ -96,8 +96,14 @@ func startMinion(m *minion, ctx context.Context) {
 		case mp := <-m.payloadCh:
 			m.busy = true
 			mds := crawlURLs(mp.currentDepth, mp.urls)
+			got := make(chan bool)
+			m.gruDumpCh <- &minionDumps{
+				minion: m.name,
+				got:    got,
+				mds:    mds,
+			}
+			<-got
 			m.busy = false
-			go func(mds []*minionDump) { m.gruDumpCh <- mds }(mds)
 		}
 	}
 }
