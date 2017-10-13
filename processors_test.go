@@ -108,3 +108,87 @@ func TestProcessor_errorCheckProcessor(t *testing.T) {
 		}
 	}
 }
+
+func TestProcessor_skippedURLProcessor(t *testing.T) {
+	tests := []struct {
+		baseURL  string
+		skipURLs []string
+	}{
+		{
+			baseURL: "http://test.com",
+		},
+		{
+			baseURL: "http://test.com",
+			skipURLs: []string{
+				"http://test.com/1",
+				"http://test.com/123",
+			},
+		},
+	}
+
+	for _, c := range tests {
+		b, _ := url.Parse(c.baseURL)
+		g := newGru(b, 1)
+		md := &minionDump{
+			sourceURL:   b,
+			unknownURLs: c.skipURLs,
+		}
+
+		skippedURLProcessor().process(g, md)
+		if !reflect.DeepEqual(c.skipURLs, g.skippedURLs[c.baseURL]) {
+			t.Fatalf("expected %v urls to be skipped but skipped %v", c.skipURLs, g.skippedURLs[c.baseURL])
+		}
+	}
+}
+
+func TestProcessor_maxDepthProcessor(t *testing.T) {
+	tests := []struct {
+		baseURL      string
+		maxDepth     int
+		currentDepth int
+		result       bool
+		urls         []string
+	}{
+		{
+			baseURL:  "http://test.com",
+			maxDepth: -1,
+			result:   true,
+		},
+		{
+			baseURL:      "http://test.com",
+			maxDepth:     2,
+			currentDepth: 1,
+			result:       true,
+		},
+
+		{
+			baseURL:      "http://test.com",
+			maxDepth:     1,
+			currentDepth: 1,
+			urls: []string{
+				"http://test.com/1",
+			},
+		},
+	}
+
+	for _, c := range tests {
+		b, _ := url.Parse(c.baseURL)
+		g := newGru(b, c.maxDepth)
+
+		urls, _ := urlStrToURLs(c.urls)
+		md := &minionDump{
+			sourceURL: b,
+			depth:     c.currentDepth,
+			urls:      urls,
+		}
+
+		r := maxDepthCheckProcessor().process(g, md)
+		if r != c.result {
+			t.Fatalf("expected %t but got %t", c.result, r)
+		}
+
+		if !reflect.DeepEqual(g.scrappedDepth[md.depth], urls) {
+			t.Fatalf("expected %v urls but got %v", c.urls, g.scrappedDepth[md.depth])
+		}
+	}
+}

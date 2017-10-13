@@ -49,12 +49,15 @@ func newGru(baseURL *url.URL, maxDepth int) *gru {
 		scrappedUnique: make(map[string]int),
 		unScrapped:     make(map[int][]*url.URL),
 		scrappedDepth:  make(map[int][]*url.URL),
-		submitDumpCh:   make(chan []*minionDump),
 		skippedURLs:    make(map[string][]string),
 		errorURLs:      make(map[string]error),
+		submitDumpCh:   make(chan []*minionDump),
 		maxDepth:       maxDepth,
 		processors: []processor{
 			uniqueURLProcessor(),
+			errorCheckProcessor(),
+			skippedURLProcessor(),
+			maxDepthCheckProcessor(),
 		},
 	}
 

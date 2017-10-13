@@ -46,3 +46,24 @@ func errorCheckProcessor() processor {
 		return false
 	})
 }
+
+// skippedURLProcessor will simply add the unknown urls to skipped map
+func skippedURLProcessor() processor {
+	return processorFunc(func(g *gru, md *minionDump) (proceed bool) {
+		g.skippedURLs[md.sourceURL.String()] = append(g.skippedURLs[md.sourceURL.String()], md.unknownURLs...)
+		return true
+	})
+}
+
+// maxDepthCheckProcessor will add the unscrapped urls to scrapped if the max depth has been reached
+func maxDepthCheckProcessor() processor {
+	return processorFunc(func(g *gru, md *minionDump) (proceed bool) {
+		if g.maxDepth == -1 || md.depth < g.maxDepth {
+			return true
+		}
+
+		// add all urls to scraped depth
+		g.scrappedDepth[md.depth] = append(g.scrappedDepth[md.depth], md.urls...)
+		return false
+	})
+}
