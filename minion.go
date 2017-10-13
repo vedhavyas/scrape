@@ -67,12 +67,12 @@ func crawlURL(depth int, u *url.URL) (md *minionDump) {
 		}
 	}
 
-	s, uu := extractURLsFromHTML(u, resp.Body)
+	s, iu := extractURLsFromHTML(u, resp.Body)
 	return &minionDump{
 		depth:       depth + 1,
 		sourceURL:   u,
 		urls:        s,
-		unknownURLs: uu,
+		invalidURLs: iu,
 	}
 }
 
@@ -86,7 +86,7 @@ func crawlURLs(depth int, urls []*url.URL) (mds []*minionDump) {
 }
 
 // startMinion starts the minion
-func startMinion(m *minion, ctx context.Context) {
+func startMinion(ctx context.Context, m *minion) {
 	log.Printf("Starting %s...\n", m.name)
 
 	for {

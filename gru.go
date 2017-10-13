@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/url"
 	"regexp"
-	"sync"
 )
 
 // gru acts a medium for the minions and does the following
@@ -18,8 +17,8 @@ type gru struct {
 	minions        []*minion           // minions that are controlled by this gru
 	scrappedUnique map[string]int      // scrappedUnique holds the map of unique urls we crawled and times its repeated
 	unScrapped     map[int][]*url.URL  // unScrapped are those that are yet to be crawled by the minions
-	scrappedDepth  map[int][]*url.URL  // scrappedDepth holds url found in each maxDepth
-	skippedURLs    map[string][]string // skippedURLs contains urls from different domains(if domainRegex is failed) and all failed urls
+	scrappedDepth  map[int][]*url.URL  // scrappedDepth holds url found in each depth
+	skippedURLs    map[string][]string // skippedURLs contains urls from different domains(if domainRegex is failed) and all invalid urls
 	errorURLs      map[string]error    // reason why this url was not crawled
 	submitDumpCh   chan *minionDumps   // submitDump listens for minions to submit their dumps
 	domainRegex    *regexp.Regexp      // restricts crawling the urls that pass the
@@ -39,7 +38,7 @@ type minionDump struct {
 	depth       int        // depth at which the urls are scrapped(+1 of sourceURL depth)
 	sourceURL   *url.URL   // sourceURL the minion crawled
 	urls        []*url.URL // urls obtained from sourceURL page
-	unknownURLs []string   // urls which couldn't be normalized
+	invalidURLs []string   // urls which couldn't be normalized
 	err         error      // reason why url is not crawled
 }
 
@@ -83,6 +82,7 @@ func setDomainRegex(g *gru, regexStr string) error {
 		return fmt.Errorf("failed to compile domain regex: %v\n", err)
 	}
 
+	log.Printf("updated domain regex: %v\n", r)
 	g.domainRegex = r
 	return nil
 }
@@ -188,9 +188,8 @@ func processDumps(g *gru, mds []*minionDump) (finished bool) {
 }
 
 // startGru initiates gru to start scraping
-func startGru(g *gru, ctx context.Context, wg *sync.WaitGroup) {
+func startGru(ctx context.Context, g *gru) {
 	log.Printf("Starting Gru with Base URL: %s\n", g.unScrapped[0])
-	defer wg.Done()
 
 	for {
 		select {

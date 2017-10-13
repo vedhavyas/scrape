@@ -50,7 +50,7 @@ func errorCheckProcessor() processor {
 // skippedURLProcessor will simply add the unknown urls to skipped map
 func skippedURLProcessor() processor {
 	return processorFunc(func(g *gru, md *minionDump) (proceed bool) {
-		g.skippedURLs[md.sourceURL.String()] = append(g.skippedURLs[md.sourceURL.String()], md.unknownURLs...)
+		g.skippedURLs[md.sourceURL.String()] = append(g.skippedURLs[md.sourceURL.String()], md.invalidURLs...)
 		return true
 	})
 }

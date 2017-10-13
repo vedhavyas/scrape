@@ -131,7 +131,7 @@ func TestProcessor_skippedURLProcessor(t *testing.T) {
 		g := newGru(b, 1)
 		md := &minionDump{
 			sourceURL:   b,
-			unknownURLs: c.skipURLs,
+			invalidURLs: c.skipURLs,
 		}
 
 		skippedURLProcessor().process(g, md)

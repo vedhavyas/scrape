@@ -37,36 +37,36 @@ func normalizeHref(href string, identifier string) string {
 }
 
 //extractURLs will extract urls from anchor tags and img tags
-func extractURLs(sourceURL *url.URL, token html.Token, key string) (links []*url.URL, unknownURLs []string) {
+func extractURLs(sourceURL *url.URL, token html.Token, key string) (urls []*url.URL, invalidURLs []string) {
 	for _, attr := range token.Attr {
 		if attr.Key == key {
 			href := normalizeHref(strings.TrimSpace(attr.Val), "#")
 			if href == "" {
-				unknownURLs = append(unknownURLs, attr.Val)
+				invalidURLs = append(invalidURLs, attr.Val)
 				continue
 			}
 
 			uri, err := resolveURL(sourceURL, href)
 			if err != nil {
-				unknownURLs = append(unknownURLs, href)
+				invalidURLs = append(invalidURLs, href)
 				continue
 			}
 
-			links = append(links, uri)
+			urls = append(urls, uri)
 		}
 	}
 
-	return links, unknownURLs
+	return urls, invalidURLs
 }
 
 //extractURLsFromHTML extracts all href urls inside a tags from an html
 //does not close the reader when done
-func extractURLsFromHTML(sourceURL *url.URL, httpBody io.Reader) (urls []*url.URL, unknownURLs []string) {
+func extractURLsFromHTML(sourceURL *url.URL, httpBody io.Reader) (urls []*url.URL, invalidURLs []string) {
 	page := html.NewTokenizer(httpBody)
 	for {
 		tokenType := page.Next()
 		if tokenType == html.ErrorToken {
-			return urls, unknownURLs
+			return urls, invalidURLs
 		}
 
 		if tokenType == html.StartTagToken ||
@@ -76,9 +76,9 @@ func extractURLsFromHTML(sourceURL *url.URL, httpBody io.Reader) (urls []*url.UR
 
 			switch token.DataAtom.String() {
 			case "a":
-				s, u := extractURLs(sourceURL, token, "href")
+				s, ius := extractURLs(sourceURL, token, "href")
 				urls = append(urls, s...)
-				unknownURLs = append(unknownURLs, u...)
+				invalidURLs = append(invalidURLs, ius...)
 			}
 		}
 	}
