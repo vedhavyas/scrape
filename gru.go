@@ -58,6 +58,7 @@ func newGru(baseURL *url.URL, maxDepth int) *gru {
 			errorCheckProcessor(),
 			skippedURLProcessor(),
 			maxDepthCheckProcessor(),
+			domainFilterProcessor(),
 		},
 	}
 
@@ -76,20 +77,6 @@ func setDomainRegex(g *gru, regexStr string) error {
 
 	g.domainRegex = r
 	return nil
-}
-
-// filterDomainURLs will return matched and unmatched urls from given urls
-func filterDomainURLs(r *regexp.Regexp, urls []*url.URL) (matched, unmatched []*url.URL) {
-	for _, u := range urls {
-		if !r.MatchString(u.String()) {
-			unmatched = append(unmatched, u)
-			continue
-		}
-
-		matched = append(matched, u)
-	}
-
-	return matched, unmatched
 }
 
 // getIdleMinions will return all the idle minions
@@ -144,14 +131,6 @@ func distributePayload(g *gru, depth int, urls []*url.URL) error {
 
 // processDump will process a single minionDump
 func processDump(g *gru, md *minionDump) {
-	/*
-		1. Add source url to unique
-		2. Add failed url to errorURLs
-		3. Add unknown urls to skipped
-		3. Check the max depth
-		4. Filter urls with domain regex
-
-	*/
 	for _, p := range g.processors {
 		r := p.process(g, md)
 		if !r {
@@ -159,16 +138,23 @@ func processDump(g *gru, md *minionDump) {
 		}
 	}
 
+	// add the md.urls to unscrapped and md.source to scraped
+	g.unScrapped[md.depth] = append(g.unScrapped[md.depth], md.urls...)
+	g.scrappedDepth[md.depth-1] = append(g.scrappedDepth[md.depth-1], md.sourceURL)
 }
 
 // processDumps process the minion dumps and signals when the crawl is complete
 func processDumps(g *gru, mds []*minionDump) (finished bool) {
+	for _, md := range mds {
+		processDump(g, md)
+	}
+
 	// add each
 	return false
 }
 
-// runGru initiates gru to start scraping
-func runGru(g *gru, ctx context.Context) {
+// startGru initiates gru to start scraping
+func startGru(g *gru, ctx context.Context) {
 	log.Printf("Starting Gru with Base URL: %s\n", g.unScrapped[0])
 
 	for {

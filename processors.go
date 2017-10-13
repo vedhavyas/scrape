@@ -67,3 +67,27 @@ func maxDepthCheckProcessor() processor {
 		return false
 	})
 }
+
+// domainFilterProcessor will filter the md.urls and update skipped urls with unmatched urls
+func domainFilterProcessor() processor {
+	return processorFunc(func(g *gru, md *minionDump) (proceed bool) {
+		if g.domainRegex == nil {
+			return true
+		}
+
+		m := []*url.URL{}
+		um := []string{}
+		for _, u := range md.urls {
+			if g.domainRegex.MatchString(u.String()) {
+				m = append(m, u)
+				continue
+			}
+
+			um = append(um, u.String())
+		}
+
+		md.urls = m
+		g.skippedURLs[md.sourceURL.String()] = append(g.skippedURLs[md.sourceURL.String()], um...)
+		return true
+	})
+}

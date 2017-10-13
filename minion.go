@@ -85,8 +85,8 @@ func crawlURLs(depth int, urls []*url.URL) (mds []*minionDump) {
 	return mds
 }
 
-// runMinion starts the minion
-func runMinion(m *minion, ctx context.Context) {
+// startMinion starts the minion
+func startMinion(m *minion, ctx context.Context) {
 	log.Printf("Starting %s...\n", m.name)
 
 	for {

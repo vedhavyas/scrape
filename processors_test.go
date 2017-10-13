@@ -192,3 +192,130 @@ func TestProcessor_maxDepthProcessor(t *testing.T) {
 		}
 	}
 }
+
+func TestProcessor_domainFilterProcessor(t *testing.T) {
+	tests := []struct {
+		baseURL   string
+		urls      []string
+		regex     string
+		matched   []string
+		unmatched []string
+	}{
+		{
+			baseURL: "http://test.com",
+			urls: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+				"http://test.com",
+			},
+			matched: []string{
+				"http://test.com",
+			},
+			unmatched: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+			},
+		},
+		{
+			baseURL: "http://test.com",
+			regex:   "test|github",
+			urls: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+				"http://test.com",
+			},
+			matched: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+				"http://test.com",
+			},
+			unmatched: []string{
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+			},
+		},
+		{
+			baseURL: "http://test.com",
+			regex:   "vedhavyas|github",
+			urls: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+				"http://test.com",
+			},
+			matched: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+			},
+			unmatched: []string{
+				"http://test.com",
+			},
+		},
+		{
+			baseURL: "http://test.com",
+			regex:   "hahaha",
+			urls: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+				"http://test.com",
+			},
+			unmatched: []string{
+				"http://github.com",
+				"http://blog.github.com",
+				"http://f1.blog.github.com",
+				"http://www.github.com",
+				"http://vedhavyas.com",
+				"http://blog.vedhavyas.com",
+				"http://test.com",
+			},
+		},
+	}
+
+	for _, c := range tests {
+		b, _ := url.Parse(c.baseURL)
+		g := newGru(b, 1)
+		if c.regex != "" {
+			setDomainRegex(g, c.regex)
+		}
+
+		urls, _ := urlStrToURLs(c.urls)
+		md := &minionDump{
+			sourceURL: b,
+			urls:      urls,
+		}
+
+		domainFilterProcessor().process(g, md)
+		if !reflect.DeepEqual(c.matched, urlsToStr(md.urls)) {
+			t.Fatalf("expected %v urls to be matched but go %v", c.matched, urlsToStr(md.urls))
+		}
+
+		if !reflect.DeepEqual(c.unmatched, g.skippedURLs[c.baseURL]) {
+			t.Fatalf("expected %v urls to unmatch but got %v", c.unmatched, g.skippedURLs[c.baseURL])
+		}
+	}
+}
