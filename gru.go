@@ -51,7 +51,11 @@ func newGru(baseURL *url.URL, maxDepth int) *gru {
 		scrappedDepth:  make(map[int][]*url.URL),
 		submitDumpCh:   make(chan []*minionDump),
 		skippedURLs:    make(map[string][]string),
+		errorURLs:      make(map[string]error),
 		maxDepth:       maxDepth,
+		processors: []processor{
+			uniqueURLProcessor(),
+		},
 	}
 
 	r, _ := regexp.Compile(baseURL.Hostname())
@@ -145,6 +149,12 @@ func processDump(g *gru, md *minionDump) {
 		4. Filter urls with domain regex
 
 	*/
+	for _, p := range g.processors {
+		r := p.process(g, md)
+		if !r {
+			return
+		}
+	}
 
 }
 

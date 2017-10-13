@@ -34,3 +34,15 @@ func uniqueURLProcessor() processor {
 		return true
 	})
 }
+
+// errorCheckProcessor check if the url scrape failed for any reason
+func errorCheckProcessor() processor {
+	return processorFunc(func(g *gru, md *minionDump) (proceed bool) {
+		if md.err == nil {
+			return true
+		}
+
+		g.errorURLs[md.sourceURL.String()] = md.err
+		return false
+	})
+}

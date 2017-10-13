@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/url"
 	"reflect"
 	"testing"
@@ -64,6 +65,46 @@ func TestProcessor_uniqueURLProcessor(t *testing.T) {
 		gtURLs := urlsToStr(md.urls)
 		if !reflect.DeepEqual(c.unmatched, gtURLs) {
 			t.Fatalf("expected %v unmatched urls but got %v", c.unmatched, gtURLs)
+		}
+	}
+}
+
+func TestProcessor_errorCheckProcessor(t *testing.T) {
+	tests := []struct {
+		baseURL string
+		err     string
+	}{
+		{
+			baseURL: "http://test.com",
+			err:     "this is an error",
+		},
+
+		{
+			baseURL: "http://vedhavyas.com",
+		},
+	}
+
+	for _, c := range tests {
+		b, _ := url.Parse(c.baseURL)
+		g := newGru(b, 1)
+		md := &minionDump{sourceURL: b}
+		if c.err != "" {
+			md.err = errors.New(c.err)
+		}
+
+		errorCheckProcessor().process(g, md)
+		if c.err == "" {
+			if _, ok := g.errorURLs[c.baseURL]; ok {
+				t.Fatal("expected no error. but got error")
+			}
+
+			continue
+		}
+
+		if err, ok := g.errorURLs[c.baseURL]; !ok {
+			t.Fatal("expected error. but got no error")
+		} else if err.Error() != c.err {
+			t.Fatalf("expected %s error but got %v", c.err, err)
 		}
 	}
 }
