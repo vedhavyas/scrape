@@ -54,31 +54,31 @@ Scrape can be integrated into any Go project through the given APIs.
 As a package, you will have access to the above mentioned `Response` and all the data in it.
 At this point, the following are the available APIs.
 
-####Start
+#### Start
 ```go
 func Start(ctx context.Context, url string) (resp *Response, err error)
 ```
 Start will start the scrapping with no depth limit(-1) and base url domain
 
-####StartWithDepth
+#### StartWithDepth
 ```go
 func StartWithDepth(ctx context.Context, url string, maxDepth int) (resp *Response, err error)
 ```
 StartWithDepth will start the scrapping with given max depth and base url domain
 
-####StartWithDepthAndDomainRegex
+#### StartWithDepthAndDomainRegex
 ```go
 func StartWithDepthAndDomainRegex(ctx context.Context, url string, maxDepth int, domainRegex string) (resp *Response, err error) 
 ```
 StartWithDepthAndDomainRegex will start the scrapping with max depth and regex
 
-####StartWithRegex
+#### StartWithRegex
 ```go
 func StartWithDomainRegex(ctx context.Context, url, domainRegex string) (resp *Response, err error)
 ```
 StartWithRegex will start the scrapping with no depth limit(-1) and regex
 
-####Sitemap
+#### Sitemap
 
 ```go
 func Sitemap(resp *Response, file string) error 
