@@ -86,7 +86,7 @@ func Sitemap(resp *Response, file string) error
 Sitemap generates a sitemap from the given response
 
 ## Feedback and Contributions
-1. If you think something is missing, please feel free to raise and issue.
+1. If you think something is missing, please feel free to raise an issue.
 2. If you would like to work on an open issue, feel free to announce yourself in issue's comments
 
 
