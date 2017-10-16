@@ -140,7 +140,7 @@ func StartWithDepthAndDomainRegex(ctx context.Context, url string, maxDepth int,
 }
 
 // StartWithRegex will start the scrapping with no depth limit(-1) and regex
-func StartWithRegex(ctx context.Context, url, domainRegex string) (resp *Response, err error) {
+func StartWithDomainRegex(ctx context.Context, url, domainRegex string) (resp *Response, err error) {
 	return start(ctx, url, -1, domainRegex)
 }
 
@@ -149,7 +149,7 @@ func Start(ctx context.Context, url string) (resp *Response, err error) {
 	return start(ctx, url, -1, "")
 }
 
-// Sitemap generates a sitemap from given response
+// Sitemap generates a sitemap from the given response
 func Sitemap(resp *Response, file string) error {
 	return generateSiteMap(file, resp.UniqueURLs)
 }
