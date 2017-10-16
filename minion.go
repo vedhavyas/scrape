@@ -95,7 +95,7 @@ func startMinion(ctx context.Context, m *minion) {
 			return
 		case mp := <-m.payloadCh:
 			m.busy = true
-			log.Printf("Crawling urls from depth %d\n", mp.currentDepth)
+			log.Printf("Crawling urls(%d) from depth %d\n", len(mp.urls), mp.currentDepth)
 			mds := crawlURLs(mp.currentDepth, mp.urls)
 			got := make(chan bool)
 			m.gruDumpCh <- &minionDumps{
