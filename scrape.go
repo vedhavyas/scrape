@@ -139,7 +139,7 @@ func StartWithDepthAndDomainRegex(ctx context.Context, url string, maxDepth int,
 	return start(ctx, url, maxDepth, domainRegex)
 }
 
-// StartWithRegex will start the scrapping with no depth limit(-1) and regex
+// StartWithDomainRegex will start the scrapping with no depth limit(-1) and regex
 func StartWithDomainRegex(ctx context.Context, url, domainRegex string) (resp *Response, err error) {
 	return start(ctx, url, -1, domainRegex)
 }
